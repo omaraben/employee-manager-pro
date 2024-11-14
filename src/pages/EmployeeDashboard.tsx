@@ -152,22 +152,30 @@ const EmployeeDashboard = () => {
                   key={entry.id}
                   className="p-4 bg-white rounded-lg shadow hover:shadow-md transition-shadow"
                 >
-                  <div className="grid grid-cols-2 gap-4">
-                    <p>
-                      <span className="font-medium">Name:</span> {entry.name}
-                    </p>
-                    <p>
-                      <span className="font-medium">ID Number:</span>{" "}
-                      {entry.idNumber}
-                    </p>
-                    <p>
-                      <span className="font-medium">Phone:</span>{" "}
-                      {entry.phoneNumber}
-                    </p>
-                    <p>
-                      <span className="font-medium">Location:</span>{" "}
-                      {entry.location}
-                    </p>
+                  <div className="grid gap-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <p>
+                        <span className="font-medium">Name:</span> {entry.name}
+                      </p>
+                      <p>
+                        <span className="font-medium">ID Number:</span>{" "}
+                        {entry.idNumber}
+                      </p>
+                      <p>
+                        <span className="font-medium">Phone:</span>{" "}
+                        {entry.phoneNumber}
+                      </p>
+                      <p>
+                        <span className="font-medium">Location:</span>{" "}
+                        {entry.location}
+                      </p>
+                    </div>
+                    <div className="border-t pt-2">
+                      <p className="font-medium">Serial Numbers:</p>
+                      <pre className="mt-1 whitespace-pre-wrap text-sm bg-gray-50 p-2 rounded">
+                        {entry.serialNumbers}
+                      </pre>
+                    </div>
                   </div>
                 </div>
               ))}
