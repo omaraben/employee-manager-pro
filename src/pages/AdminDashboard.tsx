@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { toast } from "@/components/ui/use-toast";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import * as XLSX from 'xlsx';
 
 interface Employee {
   id: string;
@@ -12,9 +14,22 @@ interface Employee {
   role: string;
 }
 
+interface EntryData {
+  id: string;
+  name: string;
+  serialNumbers: string;
+  idNumber: string;
+  phoneNumber: string;
+  vanShop: string;
+  allocationDate: string;
+  location: string;
+  createdAt: string;
+}
+
 const AdminDashboard = () => {
   const { logout } = useAuth();
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [employeeEntries, setEmployeeEntries] = useState<EntryData[]>([]);
   const [newEmployee, setNewEmployee] = useState({
     name: "",
     email: "",
@@ -43,6 +58,17 @@ const AdminDashboard = () => {
     toast({
       title: "Success",
       description: "Employee deleted successfully",
+    });
+  };
+
+  const handleExportToExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(employeeEntries);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Entries");
+    XLSX.writeFile(workbook, "employee-entries.xlsx");
+    toast({
+      title: "Success",
+      description: "Data exported to Excel successfully",
     });
   };
 
@@ -127,6 +153,48 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
         </div>
+
+        <Card className="animate-fade-in glass-card">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Employee Entries</CardTitle>
+            <Button onClick={handleExportToExcel}>Export to Excel</Button>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>ID Number</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead>Van/Shop</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead>Date</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {employeeEntries.map((entry) => (
+                    <TableRow key={entry.id}>
+                      <TableCell>{entry.name}</TableCell>
+                      <TableCell>{entry.idNumber}</TableCell>
+                      <TableCell>{entry.phoneNumber}</TableCell>
+                      <TableCell>{entry.vanShop}</TableCell>
+                      <TableCell>{entry.location}</TableCell>
+                      <TableCell>{new Date(entry.createdAt).toLocaleDateString()}</TableCell>
+                    </TableRow>
+                  ))}
+                  {employeeEntries.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center">
+                        No entries yet
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
