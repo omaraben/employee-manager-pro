@@ -9,13 +9,4 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-// Validate URL format
-try {
-  new URL(supabaseUrl);
-} catch (e) {
-  throw new Error(
-    'Invalid VITE_SUPABASE_URL: Please provide a valid Supabase project URL from your project settings'
-  );
-}
-
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
