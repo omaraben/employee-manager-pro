@@ -21,15 +21,27 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
 
+  const fetchUserProfile = async (userId: string) => {
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (error) throw error;
+    return profile;
+  };
+
   useEffect(() => {
     // Check active session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
+        const profile = await fetchUserProfile(session.user.id);
         setUser({
           id: session.user.id,
           email: session.user.email!,
-          name: session.user.user_metadata.name || '',
-          role: session.user.user_metadata.role || '',
+          name: profile.name,
+          role: profile.role,
         });
       }
     });
@@ -37,13 +49,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
+        const profile = await fetchUserProfile(session.user.id);
         setUser({
           id: session.user.id,
           email: session.user.email!,
-          name: session.user.user_metadata.name || '',
-          role: session.user.user_metadata.role || '',
+          name: profile.name,
+          role: profile.role,
         });
       } else {
         setUser(null);
@@ -55,19 +68,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const login = async (email: string, password: string) => {
     try {
-      const { user: authUser } = await loginUser(email, password);
-      if (!authUser) throw new Error("Login failed");
+      const { data, error } = await loginUser(email, password);
+      if (error) throw error;
+
+      const profile = await fetchUserProfile(data.user.id);
       
       setUser({
-        id: authUser.id,
-        email: authUser.email!,
-        name: authUser.user_metadata.name || '',
-        role: authUser.user_metadata.role || '',
+        id: data.user.id,
+        email: data.user.email!,
+        name: profile.name,
+        role: profile.role,
       });
 
       toast({
         title: "Welcome back!",
-        description: `Logged in as ${authUser.user_metadata.name || authUser.email}`,
+        description: `Logged in as ${profile.name}`,
       });
     } catch (error) {
       toast({
