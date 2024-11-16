@@ -68,14 +68,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const login = async (email: string, password: string) => {
     try {
-      const { data, error } = await loginUser(email, password);
+      const { data: { user: authUser }, error } = await loginUser(email, password);
       if (error) throw error;
+      if (!authUser) throw new Error("Login failed");
 
-      const profile = await fetchUserProfile(data.user.id);
+      const profile = await fetchUserProfile(authUser.id);
       
       setUser({
-        id: data.user.id,
-        email: data.user.email!,
+        id: authUser.id,
+        email: authUser.email!,
         name: profile.name,
         role: profile.role,
       });
