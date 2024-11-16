@@ -3,6 +3,7 @@ import { Employee, EntryData } from '@/types/types';
 
 // User Management
 export const createUser = async (email: string, password: string, name: string, role: string) => {
+  // First create the auth user
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email,
     password,
@@ -15,6 +16,22 @@ export const createUser = async (email: string, password: string, name: string, 
   });
 
   if (authError) throw authError;
+
+  // If auth user is created, create the profile
+  if (authData.user) {
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert([
+        {
+          id: authData.user.id,
+          name,
+          role,
+        },
+      ]);
+
+    if (profileError) throw profileError;
+  }
+
   return authData;
 };
 

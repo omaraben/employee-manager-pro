@@ -24,12 +24,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     // Check active session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
+      if (session?.user) {
         setUser({
           id: session.user.id,
           email: session.user.email!,
-          name: session.user.user_metadata.name,
-          role: session.user.user_metadata.role,
+          name: session.user.user_metadata.name || '',
+          role: session.user.user_metadata.role || '',
         });
       }
     });
@@ -38,12 +38,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
+      if (session?.user) {
         setUser({
           id: session.user.id,
           email: session.user.email!,
-          name: session.user.user_metadata.name,
-          role: session.user.user_metadata.role,
+          name: session.user.user_metadata.name || '',
+          role: session.user.user_metadata.role || '',
         });
       } else {
         setUser(null);
@@ -61,13 +61,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser({
         id: authUser.id,
         email: authUser.email!,
-        name: authUser.user_metadata.name,
-        role: authUser.user_metadata.role,
+        name: authUser.user_metadata.name || '',
+        role: authUser.user_metadata.role || '',
       });
 
       toast({
         title: "Welcome back!",
-        description: `Logged in as ${authUser.user_metadata.name}`,
+        description: `Logged in as ${authUser.user_metadata.name || authUser.email}`,
       });
     } catch (error) {
       toast({
