@@ -29,7 +29,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       .eq('id', userId)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error("Error fetching profile:", error);
+      throw error;
+    }
+    
+    if (!profile) {
+      throw new Error("Profile not found");
+    }
+    
     return profile;
   };
 
@@ -57,6 +65,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           await supabase.auth.signOut();
           setUser(null);
           navigate('/login');
+          toast.error("Error loading user profile");
         }
       }
     });
@@ -86,6 +95,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           await supabase.auth.signOut();
           setUser(null);
           navigate('/login');
+          toast.error("Error loading user profile");
         }
       } else {
         setUser(null);
@@ -97,31 +107,43 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [navigate]);
 
   const login = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    
-    if (error) throw error;
-    if (!data.user) throw new Error("Login failed");
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) throw error;
+      if (!data.user) throw new Error("Login failed");
 
-    const profile = await fetchUserProfile(data.user.id);
-    
-    setUser({
-      id: data.user.id,
-      email: data.user.email!,
-      name: profile.name,
-      role: profile.role,
-    });
+      const profile = await fetchUserProfile(data.user.id);
+      
+      setUser({
+        id: data.user.id,
+        email: data.user.email!,
+        name: profile.name,
+        role: profile.role,
+      });
 
-    // Navigation is handled in the auth state change listener
+      toast.success("Logged in successfully");
+      // Navigation is handled in the auth state change listener
+    } catch (error: any) {
+      console.error("Login error:", error);
+      toast.error(error.message || "Invalid email or password");
+      throw error;
+    }
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    navigate('/login');
-    toast.success("Logged out successfully");
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+      navigate('/login');
+      toast.success("Logged out successfully");
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast.error("Error logging out");
+    }
   };
 
   return (
