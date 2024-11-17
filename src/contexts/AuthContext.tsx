@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { toast } from "@/components/ui/use-toast";
-import { loginUser, logoutUser } from "@/lib/api";
-import { supabase } from "@/lib/supabase";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface User {
   id: string;
@@ -13,13 +13,14 @@ interface User {
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const navigate = useNavigate();
 
   const fetchUserProfile = async (userId: string) => {
     const { data: profile, error } = await supabase
@@ -36,84 +37,91 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Check active session
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
-        const profile = await fetchUserProfile(session.user.id);
-        setUser({
-          id: session.user.id,
-          email: session.user.email!,
-          name: profile.name,
-          role: profile.role,
-        });
+        try {
+          const profile = await fetchUserProfile(session.user.id);
+          setUser({
+            id: session.user.id,
+            email: session.user.email!,
+            name: profile.name,
+            role: profile.role,
+          });
+          
+          // Redirect based on role
+          if (profile.role === 'admin') {
+            navigate('/admin');
+          } else {
+            navigate('/employee');
+          }
+        } catch (error) {
+          console.error("Error fetching user profile:", error);
+          await supabase.auth.signOut();
+          setUser(null);
+          navigate('/login');
+        }
       }
     });
 
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
-        const profile = await fetchUserProfile(session.user.id);
-        setUser({
-          id: session.user.id,
-          email: session.user.email!,
-          name: profile.name,
-          role: profile.role,
-        });
+        try {
+          const profile = await fetchUserProfile(session.user.id);
+          setUser({
+            id: session.user.id,
+            email: session.user.email!,
+            name: profile.name,
+            role: profile.role,
+          });
+          
+          // Redirect based on role
+          if (profile.role === 'admin') {
+            navigate('/admin');
+          } else {
+            navigate('/employee');
+          }
+        } catch (error) {
+          console.error("Error fetching user profile:", error);
+          await supabase.auth.signOut();
+          setUser(null);
+          navigate('/login');
+        }
       } else {
         setUser(null);
+        navigate('/login');
       }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [navigate]);
 
   const login = async (email: string, password: string) => {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      
-      if (error) throw error;
-      if (!data.user) throw new Error("Login failed");
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    
+    if (error) throw error;
+    if (!data.user) throw new Error("Login failed");
 
-      const profile = await fetchUserProfile(data.user.id);
-      
-      setUser({
-        id: data.user.id,
-        email: data.user.email!,
-        name: profile.name,
-        role: profile.role,
-      });
+    const profile = await fetchUserProfile(data.user.id);
+    
+    setUser({
+      id: data.user.id,
+      email: data.user.email!,
+      name: profile.name,
+      role: profile.role,
+    });
 
-      toast({
-        title: "Welcome back!",
-        description: `Logged in as ${profile.name}`,
-      });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Invalid email or password",
-      });
-      throw error;
-    }
+    // Navigation is handled in the auth state change listener
   };
 
   const logout = async () => {
-    try {
-      await logoutUser();
-      setUser(null);
-      toast({
-        title: "Logged out",
-        description: "You have been successfully logged out",
-      });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to logout",
-      });
-    }
+    await supabase.auth.signOut();
+    setUser(null);
+    navigate('/login');
+    toast.success("Logged out successfully");
   };
 
   return (

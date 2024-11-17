@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { toast } from "sonner";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -15,12 +16,14 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    
     try {
       await login(email, password);
-      const isAdmin = email === "admin@example.com";
-      navigate(isAdmin ? "/admin" : "/employee");
+      // Login successful - navigation is handled in AuthContext
+      toast.success("Login successful!");
     } catch (error) {
-      // Error is handled in AuthContext
+      console.error("Login error:", error);
+      toast.error("Invalid email or password. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -28,7 +31,7 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md animate-fade-in glass-card">
+      <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">Welcome back</CardTitle>
           <CardDescription className="text-center">
@@ -45,6 +48,7 @@ const Login = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full"
                 required
+                disabled={isLoading}
               />
             </div>
             <div className="space-y-2">
@@ -55,11 +59,12 @@ const Login = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full"
                 required
+                disabled={isLoading}
               />
             </div>
             <Button
               type="submit"
-              className="w-full hover-scale"
+              className="w-full"
               disabled={isLoading}
             >
               {isLoading ? "Signing in..." : "Sign in"}
