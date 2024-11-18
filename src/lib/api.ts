@@ -1,28 +1,29 @@
 import { Employee, EntryData } from '@/types/types';
 import pool from './db';
+import { ResultSetHeader } from 'mysql2/promise';
 
 // User Management
 export const createUser = async (email: string, password: string, name: string, role: string) => {
   console.log('Creating user:', { email, name, role });
-  const [result] = await pool.execute(
+  const [result] = await pool.execute<ResultSetHeader>(
     'INSERT INTO users (email, password, name, role) VALUES (?, ?, ?, ?)',
     [email, password, name, role]
   );
   console.log('User created:', result);
-  return { id: result.insertId, email, name, role };
+  return { id: result.insertId.toString(), email, name, role };
 };
 
 // Entry Management
 export const createEntry = async (entry: Omit<EntryData, 'id' | 'createdAt'>) => {
   console.log('Creating entry:', entry);
-  const [result] = await pool.execute(
+  const [result] = await pool.execute<ResultSetHeader>(
     'INSERT INTO entries (user_id, name, serial_numbers, id_number, phone_number, van_shop, allocation_date, location) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
     [entry.user_id, entry.name, entry.serialNumbers, entry.idNumber, entry.phoneNumber, entry.vanShop, entry.allocationDate, entry.location]
   );
   console.log('Entry created:', result);
   return {
     ...entry,
-    id: result.insertId,
+    id: result.insertId.toString(),
     createdAt: new Date().toISOString()
   };
 };
