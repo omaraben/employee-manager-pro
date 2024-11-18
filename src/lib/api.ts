@@ -1,49 +1,59 @@
 import { Employee, EntryData } from '@/types/types';
+import pool from './db';
 
 // User Management
 export const createUser = async (email: string, password: string, name: string, role: string) => {
-  const users = JSON.parse(localStorage.getItem('users') || '[]');
-  const newUser = {
-    id: Date.now().toString(),
-    email,
-    password,
-    name,
-    role,
-  };
-  users.push(newUser);
-  localStorage.setItem('users', JSON.stringify(users));
-  return newUser;
+  console.log('Creating user:', { email, name, role });
+  const [result] = await pool.execute(
+    'INSERT INTO users (email, password, name, role) VALUES (?, ?, ?, ?)',
+    [email, password, name, role]
+  );
+  console.log('User created:', result);
+  return { id: result.insertId, email, name, role };
 };
 
 // Entry Management
 export const createEntry = async (entry: Omit<EntryData, 'id' | 'createdAt'>) => {
-  const entries = JSON.parse(localStorage.getItem('entries') || '[]');
-  const newEntry = {
+  console.log('Creating entry:', entry);
+  const [result] = await pool.execute(
+    'INSERT INTO entries (user_id, name, serial_numbers, id_number, phone_number, van_shop, allocation_date, location) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    [entry.user_id, entry.name, entry.serialNumbers, entry.idNumber, entry.phoneNumber, entry.vanShop, entry.allocationDate, entry.location]
+  );
+  console.log('Entry created:', result);
+  return {
     ...entry,
-    id: Date.now().toString(),
-    createdAt: new Date().toISOString(),
+    id: result.insertId,
+    createdAt: new Date().toISOString()
   };
-  entries.push(newEntry);
-  localStorage.setItem('entries', JSON.stringify(entries));
-  return newEntry;
 };
 
 export const getEntries = async () => {
-  return JSON.parse(localStorage.getItem('entries') || '[]');
+  console.log('Fetching all entries');
+  const [rows] = await pool.execute('SELECT * FROM entries ORDER BY created_at DESC');
+  console.log('Entries fetched:', rows);
+  return rows;
 };
 
 export const getUserEntries = async (userId: string) => {
-  const entries = JSON.parse(localStorage.getItem('entries') || '[]');
-  return entries.filter((entry: EntryData) => entry.user_id === userId);
+  console.log('Fetching entries for user:', userId);
+  const [rows] = await pool.execute(
+    'SELECT * FROM entries WHERE user_id = ? ORDER BY created_at DESC',
+    [userId]
+  );
+  console.log('User entries fetched:', rows);
+  return rows;
 };
 
 // User Management
 export const getUsers = async () => {
-  return JSON.parse(localStorage.getItem('users') || '[]');
+  console.log('Fetching all users');
+  const [rows] = await pool.execute('SELECT id, email, name, role FROM users');
+  console.log('Users fetched:', rows);
+  return rows;
 };
 
 export const deleteUser = async (userId: string) => {
-  const users = JSON.parse(localStorage.getItem('users') || '[]');
-  const filteredUsers = users.filter((user: Employee) => user.id !== userId);
-  localStorage.setItem('users', JSON.stringify(filteredUsers));
+  console.log('Deleting user:', userId);
+  await pool.execute('DELETE FROM users WHERE id = ?', [userId]);
+  console.log('User deleted');
 };
