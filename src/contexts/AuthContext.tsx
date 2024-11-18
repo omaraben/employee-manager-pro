@@ -18,7 +18,10 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    const savedUser = localStorage.getItem('user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
   const navigate = useNavigate();
 
   // Temporary mock users for testing
@@ -50,6 +53,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       const { password: _, ...userWithoutPassword } = user;
       setUser(userWithoutPassword);
+      localStorage.setItem('user', JSON.stringify(userWithoutPassword));
       
       if (user.role === 'admin') {
         navigate('/admin');
@@ -68,6 +72,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const logout = async () => {
     try {
       setUser(null);
+      localStorage.removeItem('user');
       navigate('/login');
       toast.success("Logged out successfully");
     } catch (error) {

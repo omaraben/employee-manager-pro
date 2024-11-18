@@ -1,103 +1,49 @@
-import { supabase } from './supabase';
 import { Employee, EntryData } from '@/types/types';
 
 // User Management
 export const createUser = async (email: string, password: string, name: string, role: string) => {
-  // First create the auth user
-  const { data: authData, error: authError } = await supabase.auth.signUp({
+  const users = JSON.parse(localStorage.getItem('users') || '[]');
+  const newUser = {
+    id: Date.now().toString(),
     email,
     password,
-    options: {
-      data: {
-        name,
-        role,
-      },
-    },
-  });
-
-  if (authError) throw authError;
-
-  // If auth user is created, create the profile
-  if (authData.user) {
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .insert([
-        {
-          id: authData.user.id,
-          name,
-          role,
-        },
-      ]);
-
-    if (profileError) throw profileError;
-  }
-
-  return authData;
-};
-
-export const loginUser = async (email: string, password: string) => {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-  
-  if (error) throw error;
-  return data;
-};
-
-export const logoutUser = async () => {
-  const { error } = await supabase.auth.signOut();
-  if (error) throw error;
+    name,
+    role,
+  };
+  users.push(newUser);
+  localStorage.setItem('users', JSON.stringify(users));
+  return newUser;
 };
 
 // Entry Management
 export const createEntry = async (entry: Omit<EntryData, 'id' | 'createdAt'>) => {
-  const { data, error } = await supabase
-    .from('entries')
-    .insert([{ ...entry, created_at: new Date().toISOString() }])
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
+  const entries = JSON.parse(localStorage.getItem('entries') || '[]');
+  const newEntry = {
+    ...entry,
+    id: Date.now().toString(),
+    createdAt: new Date().toISOString(),
+  };
+  entries.push(newEntry);
+  localStorage.setItem('entries', JSON.stringify(entries));
+  return newEntry;
 };
 
 export const getEntries = async () => {
-  const { data, error } = await supabase
-    .from('entries')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data;
+  return JSON.parse(localStorage.getItem('entries') || '[]');
 };
 
 export const getUserEntries = async (userId: string) => {
-  const { data, error } = await supabase
-    .from('entries')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data;
+  const entries = JSON.parse(localStorage.getItem('entries') || '[]');
+  return entries.filter((entry: EntryData) => entry.user_id === userId);
 };
 
 // User Management
 export const getUsers = async () => {
-  const { data, error } = await supabase
-    .from('users')
-    .select('*');
-
-  if (error) throw error;
-  return data;
+  return JSON.parse(localStorage.getItem('users') || '[]');
 };
 
 export const deleteUser = async (userId: string) => {
-  const { error } = await supabase
-    .from('users')
-    .delete()
-    .eq('id', userId);
-
-  if (error) throw error;
+  const users = JSON.parse(localStorage.getItem('users') || '[]');
+  const filteredUsers = users.filter((user: Employee) => user.id !== userId);
+  localStorage.setItem('users', JSON.stringify(filteredUsers));
 };
