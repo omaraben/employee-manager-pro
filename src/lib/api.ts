@@ -1,5 +1,5 @@
-import { Employee, EntryData } from '@/types/types';
 import { supabase } from "@/integrations/supabase/client";
+import { Employee, EntryData } from "@/types/types";
 
 // User Management
 export const createUser = async (email: string, password: string, name: string, role: string) => {
@@ -20,11 +20,20 @@ export const createUser = async (email: string, password: string, name: string, 
 };
 
 // Entry Management
-export const createEntry = async (entry: Omit<EntryData, 'id' | 'createdAt'>) => {
+export const createEntry = async (entry: Omit<EntryData, 'id' | 'created_at'>) => {
   console.log('Creating entry:', entry);
   const { data, error } = await supabase
     .from('entries')
-    .insert([entry])
+    .insert({
+      user_id: entry.user_id,
+      name: entry.name,
+      serial_numbers: entry.serial_numbers,
+      id_number: entry.id_number,
+      phone_number: entry.phone_number,
+      van_shop: entry.van_shop,
+      allocation_date: entry.allocation_date,
+      location: entry.location
+    })
     .select()
     .single();
     
@@ -60,7 +69,7 @@ export const getUsers = async () => {
   console.log('Fetching all users');
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, email, name, role');
+    .select('id, name, role');
     
   if (error) throw error;
   return data;

@@ -10,14 +10,14 @@ import { EntryData } from "@/types/types";
 
 const EmployeeDashboard = () => {
   const { logout, user } = useAuth();
-  const [formData, setFormData] = useState<Omit<EntryData, "id" | "createdAt">>({
+  const [formData, setFormData] = useState<Omit<EntryData, "id" | "created_at">>({
     user_id: user?.id || "",
     name: "",
-    serialNumbers: "",
-    idNumber: "",
-    phoneNumber: "",
-    vanShop: "",
-    allocationDate: "",
+    serial_numbers: "",
+    id_number: "",
+    phone_number: "",
+    van_shop: "",
+    allocation_date: "",
     location: "",
   });
   const [entries, setEntries] = useState<EntryData[]>([]);
@@ -33,11 +33,11 @@ const EmployeeDashboard = () => {
       setFormData({
         user_id: user?.id || "",
         name: "",
-        serialNumbers: "",
-        idNumber: "",
-        phoneNumber: "",
-        vanShop: "",
-        allocationDate: "",
+        serial_numbers: "",
+        id_number: "",
+        phone_number: "",
+        van_shop: "",
+        allocation_date: "",
         location: "",
       });
       
@@ -84,26 +84,26 @@ const EmployeeDashboard = () => {
               />
               <Textarea
                 placeholder="Serial Numbers (one per line)"
-                value={formData.serialNumbers}
+                value={formData.serial_numbers}
                 onChange={(e) =>
-                  setFormData({ ...formData, serialNumbers: e.target.value })
+                  setFormData({ ...formData, serial_numbers: e.target.value })
                 }
                 required
               />
               <div className="grid grid-cols-2 gap-4">
                 <Input
                   placeholder="ID Number"
-                  value={formData.idNumber}
+                  value={formData.id_number}
                   onChange={(e) =>
-                    setFormData({ ...formData, idNumber: e.target.value })
+                    setFormData({ ...formData, id_number: e.target.value })
                   }
                   required
                 />
                 <Input
                   placeholder="Phone Number"
-                  value={formData.phoneNumber}
+                  value={formData.phone_number}
                   onChange={(e) =>
-                    setFormData({ ...formData, phoneNumber: e.target.value })
+                    setFormData({ ...formData, phone_number: e.target.value })
                   }
                   required
                 />
@@ -111,18 +111,18 @@ const EmployeeDashboard = () => {
               <div className="grid grid-cols-2 gap-4">
                 <Input
                   placeholder="Van/Shop"
-                  value={formData.vanShop}
+                  value={formData.van_shop}
                   onChange={(e) =>
-                    setFormData({ ...formData, vanShop: e.target.value })
+                    setFormData({ ...formData, van_shop: e.target.value })
                   }
                   required
                 />
                 <Input
                   type="date"
                   placeholder="Allocation Date"
-                  value={formData.allocationDate}
+                  value={formData.allocation_date}
                   onChange={(e) =>
-                    setFormData({ ...formData, allocationDate: e.target.value })
+                    setFormData({ ...formData, allocation_date: e.target.value })
                   }
                   required
                 />
@@ -160,11 +160,11 @@ const EmployeeDashboard = () => {
                       </p>
                       <p>
                         <span className="font-medium">ID Number:</span>{" "}
-                        {entry.idNumber}
+                        {entry.id_number}
                       </p>
                       <p>
                         <span className="font-medium">Phone:</span>{" "}
-                        {entry.phoneNumber}
+                        {entry.phone_number}
                       </p>
                       <p>
                         <span className="font-medium">Location:</span>{" "}
@@ -174,7 +174,7 @@ const EmployeeDashboard = () => {
                     <div className="border-t pt-2">
                       <p className="font-medium">Serial Numbers:</p>
                       <pre className="mt-1 whitespace-pre-wrap text-sm bg-gray-50 p-2 rounded">
-                        {entry.serialNumbers}
+                        {entry.serial_numbers}
                       </pre>
                     </div>
                   </div>

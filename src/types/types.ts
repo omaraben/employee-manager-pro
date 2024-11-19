@@ -9,11 +9,11 @@ export interface EntryData {
   id: string;
   user_id: string;
   name: string;
-  serialNumbers: string;
-  idNumber: string;
-  phoneNumber: string;
-  vanShop: string;
-  allocationDate: string;
+  serial_numbers: string;
+  id_number: string;
+  phone_number: string;
+  van_shop: string;
+  allocation_date: string;
   location: string;
-  createdAt: string;
+  created_at: string;
 }
