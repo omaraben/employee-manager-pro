@@ -1,76 +1,97 @@
 import { Employee, EntryData } from '@/types/types';
-import pool from './db';
-import { ResultSetHeader } from 'mysql2/promise';
-import { v4 as uuidv4 } from 'uuid';
+import { supabase } from "@/integrations/supabase/client";
 
 // User Management
 export const createUser = async (email: string, password: string, name: string, role: string) => {
   console.log('Creating user:', { email, name, role });
-  const id = uuidv4();
-  const [result] = await pool.execute<ResultSetHeader>(
-    'INSERT INTO users (id, email, password, name, role) VALUES (?, ?, ?, ?, ?)',
-    [id, email, password, name, role]
-  );
-  console.log('User created:', result);
-  return { id, email, name, role };
+  const { data: authData, error: authError } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        name,
+        role
+      }
+    }
+  });
+  
+  if (authError) throw authError;
+  return { id: authData.user?.id, email, name, role };
 };
 
 // Entry Management
 export const createEntry = async (entry: Omit<EntryData, 'id' | 'createdAt'>) => {
   console.log('Creating entry:', entry);
-  const id = uuidv4();
-  const [result] = await pool.execute<ResultSetHeader>(
-    'INSERT INTO entries (id, user_id, name, serial_numbers, id_number, phone_number, van_shop, allocation_date, location) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-    [id, entry.user_id, entry.name, entry.serialNumbers, entry.idNumber, entry.phoneNumber, entry.vanShop, entry.allocationDate, entry.location]
-  );
-  console.log('Entry created:', result);
-  return {
-    ...entry,
-    id,
-    createdAt: new Date().toISOString()
-  };
+  const { data, error } = await supabase
+    .from('entries')
+    .insert([entry])
+    .select()
+    .single();
+    
+  if (error) throw error;
+  return data;
 };
 
 export const getEntries = async () => {
   console.log('Fetching all entries');
-  const [rows] = await pool.execute('SELECT * FROM entries ORDER BY created_at DESC');
-  console.log('Entries fetched:', rows);
-  return rows;
+  const { data, error } = await supabase
+    .from('entries')
+    .select('*')
+    .order('created_at', { ascending: false });
+    
+  if (error) throw error;
+  return data;
 };
 
 export const getUserEntries = async (userId: string) => {
   console.log('Fetching entries for user:', userId);
-  const [rows] = await pool.execute(
-    'SELECT * FROM entries WHERE user_id = ? ORDER BY created_at DESC',
-    [userId]
-  );
-  console.log('User entries fetched:', rows);
-  return rows;
+  const { data, error } = await supabase
+    .from('entries')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+    
+  if (error) throw error;
+  return data;
 };
 
 // User Management
 export const getUsers = async () => {
   console.log('Fetching all users');
-  const [rows] = await pool.execute('SELECT id, email, name, role FROM users');
-  console.log('Users fetched:', rows);
-  return rows;
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, email, name, role');
+    
+  if (error) throw error;
+  return data;
 };
 
 export const deleteUser = async (userId: string) => {
   console.log('Deleting user:', userId);
-  await pool.execute('DELETE FROM users WHERE id = ?', [userId]);
-  console.log('User deleted');
+  const { error } = await supabase.auth.admin.deleteUser(userId);
+  if (error) throw error;
 };
 
 export const loginUser = async (email: string, password: string) => {
   console.log('Attempting login for:', email);
-  const [rows]: any = await pool.execute(
-    'SELECT id, email, name, role FROM users WHERE email = ? AND password = ?',
-    [email, password]
-  );
-  console.log('Login result:', rows);
-  if (rows.length > 0) {
-    return rows[0];
-  }
-  return null;
+  const { data: { user }, error } = await supabase.auth.signInWithPassword({
+    email,
+    password
+  });
+  
+  if (error) throw error;
+  if (!user) return null;
+  
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('name, role')
+    .eq('id', user.id)
+    .single();
+    
+  return {
+    id: user.id,
+    email: user.email,
+    name: profile?.name,
+    role: profile?.role
+  };
 };
