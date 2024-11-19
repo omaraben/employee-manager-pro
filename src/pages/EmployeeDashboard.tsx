@@ -5,22 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { toast } from "@/components/ui/use-toast";
-
-interface EntryData {
-  id: string;
-  name: string;
-  serialNumbers: string;
-  idNumber: string;
-  phoneNumber: string;
-  vanShop: string;
-  allocationDate: string;
-  location: string;
-  createdAt: string;
-}
+import { createEntry } from "@/lib/api";
+import { EntryData } from "@/types/types";
 
 const EmployeeDashboard = () => {
   const { logout, user } = useAuth();
   const [formData, setFormData] = useState<Omit<EntryData, "id" | "createdAt">>({
+    user_id: user?.id || "",
     name: "",
     serialNumbers: "",
     idNumber: "",
@@ -31,27 +22,37 @@ const EmployeeDashboard = () => {
   });
   const [entries, setEntries] = useState<EntryData[]>([]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newEntry = {
-      ...formData,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-    };
-    setEntries([...entries, newEntry]);
-    setFormData({
-      name: "",
-      serialNumbers: "",
-      idNumber: "",
-      phoneNumber: "",
-      vanShop: "",
-      allocationDate: "",
-      location: "",
-    });
-    toast({
-      title: "Success",
-      description: "Data submitted successfully",
-    });
+    try {
+      console.log("Submitting form data:", formData);
+      const newEntry = await createEntry(formData);
+      console.log("Entry created:", newEntry);
+      
+      setEntries([newEntry, ...entries]);
+      setFormData({
+        user_id: user?.id || "",
+        name: "",
+        serialNumbers: "",
+        idNumber: "",
+        phoneNumber: "",
+        vanShop: "",
+        allocationDate: "",
+        location: "",
+      });
+      
+      toast({
+        title: "Success",
+        description: "Data submitted successfully",
+      });
+    } catch (error) {
+      console.error("Error submitting data:", error);
+      toast({
+        title: "Error",
+        description: "Failed to submit data. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
