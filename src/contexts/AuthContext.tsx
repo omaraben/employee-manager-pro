@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface User {
   id: string;
@@ -24,38 +25,46 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   });
   const navigate = useNavigate();
 
-  // Temporary mock users for testing
-  const mockUsers = [
-    {
-      id: "1",
-      email: "admin@example.com",
-      password: "admin123",
-      name: "Admin User",
-      role: "admin",
-    },
-    {
-      id: "2",
-      email: "employee@example.com",
-      password: "employee123",
-      name: "Employee User",
-      role: "employee",
-    },
-  ];
-
   const login = async (email: string, password: string) => {
     try {
       console.log('Attempting login for email:', email);
-      const user = mockUsers.find(u => u.email === email && u.password === password);
-      
-      if (!user) {
-        throw new Error("Invalid credentials");
+      const { data: { user: authUser }, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError) {
+        console.error("Login error:", signInError);
+        throw signInError;
       }
 
-      const { password: _, ...userWithoutPassword } = user;
-      setUser(userWithoutPassword);
-      localStorage.setItem('user', JSON.stringify(userWithoutPassword));
+      if (!authUser) {
+        throw new Error("No user returned after login");
+      }
+
+      // Fetch the user's profile from the profiles table
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('name, role')
+        .eq('id', authUser.id)
+        .single();
+
+      if (profileError) {
+        console.error("Profile fetch error:", profileError);
+        throw profileError;
+      }
+
+      const userWithProfile = {
+        id: authUser.id,
+        email: authUser.email!,
+        name: profile.name || authUser.email!,
+        role: profile.role || 'employee'
+      };
+
+      setUser(userWithProfile);
+      localStorage.setItem('user', JSON.stringify(userWithProfile));
       
-      if (user.role === 'admin') {
+      if (userWithProfile.role === 'admin') {
         navigate('/admin');
       } else {
         navigate('/employee');
@@ -71,11 +80,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = async () => {
     try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
       setUser(null);
       localStorage.removeItem('user');
       navigate('/login');
       toast.success("Logged out successfully");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Logout error:", error);
       toast.error("Error logging out");
     }

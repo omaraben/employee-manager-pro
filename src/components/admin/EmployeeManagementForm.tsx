@@ -3,9 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { Employee } from "@/types/types";
-import { createUser } from "@/lib/api";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Props {
   onAddEmployee: (employee: Omit<Employee, "id">) => void;
@@ -27,26 +27,41 @@ const EmployeeManagementForm = ({ onAddEmployee, onDeleteEmployee, employees }: 
     setIsLoading(true);
     try {
       console.log("Creating new employee:", newEmployee);
-      const createdEmployee = await createUser(
-        newEmployee.email,
-        newEmployee.password,
-        newEmployee.name,
-        newEmployee.role
-      );
-      console.log("Employee created:", createdEmployee);
-      onAddEmployee(newEmployee);
-      setNewEmployee({ name: "", email: "", password: "", role: "employee" });
-      toast({
-        title: "Success",
-        description: `New ${newEmployee.role} added successfully`,
+      
+      // Create the user in Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: newEmployee.email,
+        password: newEmployee.password,
+        email_confirm: true, // Auto-confirms the email
+        user_metadata: {
+          name: newEmployee.name,
+          role: newEmployee.role
+        }
       });
+
+      if (authError) {
+        console.error("Auth error:", authError);
+        throw authError;
+      }
+
+      if (!authData.user) {
+        throw new Error("No user created");
+      }
+
+      const createdEmployee = {
+        id: authData.user.id,
+        email: authData.user.email!,
+        name: newEmployee.name,
+        role: newEmployee.role
+      };
+
+      console.log("Employee created:", createdEmployee);
+      onAddEmployee(createdEmployee);
+      setNewEmployee({ name: "", email: "", password: "", role: "employee" });
+      toast.success(`New ${newEmployee.role} added successfully`);
     } catch (error: any) {
       console.error("Error creating employee:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create employee",
-        variant: "destructive",
-      });
+      toast.error(error.message || "Failed to create employee");
     } finally {
       setIsLoading(false);
     }
