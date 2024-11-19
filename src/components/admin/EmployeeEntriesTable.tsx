@@ -46,13 +46,13 @@ const EmployeeEntriesTable = ({ entries }: Props) => {
                 <TableRow key={entry.id}>
                   <TableCell>{entry.name}</TableCell>
                   <TableCell className="max-w-md overflow-hidden text-ellipsis">
-                    {entry.serialNumbers}
+                    {entry.serial_numbers}
                   </TableCell>
-                  <TableCell>{entry.idNumber}</TableCell>
-                  <TableCell>{entry.phoneNumber}</TableCell>
-                  <TableCell>{entry.vanShop}</TableCell>
+                  <TableCell>{entry.id_number}</TableCell>
+                  <TableCell>{entry.phone_number}</TableCell>
+                  <TableCell>{entry.van_shop}</TableCell>
                   <TableCell>{entry.location}</TableCell>
-                  <TableCell>{new Date(entry.createdAt).toLocaleDateString()}</TableCell>
+                  <TableCell>{new Date(entry.created_at).toLocaleDateString()}</TableCell>
                 </TableRow>
               ))}
               {entries.length === 0 && (

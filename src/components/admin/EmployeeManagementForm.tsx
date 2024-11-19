@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/components/ui/use-toast";
 import { Employee } from "@/types/types";
+import { createUser } from "@/lib/api";
 
 interface Props {
   onAddEmployee: (employee: Omit<Employee, "id">) => void;
@@ -19,15 +20,36 @@ const EmployeeManagementForm = ({ onAddEmployee, onDeleteEmployee, employees }: 
     password: "",
     role: "employee",
   });
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleAddEmployee = (e: React.FormEvent) => {
+  const handleAddEmployee = async (e: React.FormEvent) => {
     e.preventDefault();
-    onAddEmployee(newEmployee);
-    setNewEmployee({ name: "", email: "", password: "", role: "employee" });
-    toast({
-      title: "Success",
-      description: `New ${newEmployee.role} added successfully`,
-    });
+    setIsLoading(true);
+    try {
+      console.log("Creating new employee:", newEmployee);
+      const createdEmployee = await createUser(
+        newEmployee.email,
+        newEmployee.password,
+        newEmployee.name,
+        newEmployee.role
+      );
+      console.log("Employee created:", createdEmployee);
+      onAddEmployee(newEmployee);
+      setNewEmployee({ name: "", email: "", password: "", role: "employee" });
+      toast({
+        title: "Success",
+        description: `New ${newEmployee.role} added successfully`,
+      });
+    } catch (error: any) {
+      console.error("Error creating employee:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create employee",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -78,8 +100,8 @@ const EmployeeManagementForm = ({ onAddEmployee, onDeleteEmployee, employees }: 
                 <SelectItem value="employee">Employee</SelectItem>
               </SelectContent>
             </Select>
-            <Button type="submit" className="w-full hover-scale">
-              Add User
+            <Button type="submit" className="w-full hover-scale" disabled={isLoading}>
+              {isLoading ? "Adding User..." : "Add User"}
             </Button>
           </form>
         </CardContent>

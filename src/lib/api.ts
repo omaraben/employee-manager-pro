@@ -15,7 +15,12 @@ export const createUser = async (email: string, password: string, name: string, 
     }
   });
   
-  if (authError) throw authError;
+  if (authError) {
+    console.error('Auth error:', authError);
+    throw authError;
+  }
+
+  console.log('Auth data:', authData);
   return { id: authData.user?.id, email, name, role };
 };
 
@@ -24,7 +29,7 @@ export const createEntry = async (entry: Omit<EntryData, 'id' | 'created_at'>) =
   console.log('Creating entry:', entry);
   const { data, error } = await supabase
     .from('entries')
-    .insert({
+    .insert([{
       user_id: entry.user_id,
       name: entry.name,
       serial_numbers: entry.serial_numbers,
@@ -33,11 +38,14 @@ export const createEntry = async (entry: Omit<EntryData, 'id' | 'created_at'>) =
       van_shop: entry.van_shop,
       allocation_date: entry.allocation_date,
       location: entry.location
-    })
+    }])
     .select()
     .single();
     
-  if (error) throw error;
+  if (error) {
+    console.error('Entry creation error:', error);
+    throw error;
+  }
   return data;
 };
 
@@ -48,7 +56,10 @@ export const getEntries = async () => {
     .select('*')
     .order('created_at', { ascending: false });
     
-  if (error) throw error;
+  if (error) {
+    console.error('Get entries error:', error);
+    throw error;
+  }
   return data;
 };
 
@@ -60,7 +71,10 @@ export const getUserEntries = async (userId: string) => {
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
     
-  if (error) throw error;
+  if (error) {
+    console.error('Get user entries error:', error);
+    throw error;
+  }
   return data;
 };
 
@@ -71,14 +85,20 @@ export const getUsers = async () => {
     .from('profiles')
     .select('id, name, role');
     
-  if (error) throw error;
+  if (error) {
+    console.error('Get users error:', error);
+    throw error;
+  }
   return data;
 };
 
 export const deleteUser = async (userId: string) => {
   console.log('Deleting user:', userId);
   const { error } = await supabase.auth.admin.deleteUser(userId);
-  if (error) throw error;
+  if (error) {
+    console.error('Delete user error:', error);
+    throw error;
+  }
 };
 
 export const loginUser = async (email: string, password: string) => {
@@ -88,14 +108,26 @@ export const loginUser = async (email: string, password: string) => {
     password
   });
   
-  if (error) throw error;
-  if (!user) return null;
+  if (error) {
+    console.error('Login error:', error);
+    throw error;
+  }
   
-  const { data: profile } = await supabase
+  if (!user) {
+    console.error('No user returned after login');
+    return null;
+  }
+  
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('name, role')
     .eq('id', user.id)
     .single();
+    
+  if (profileError) {
+    console.error('Profile fetch error:', profileError);
+    throw profileError;
+  }
     
   return {
     id: user.id,
