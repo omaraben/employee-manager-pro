@@ -58,20 +58,18 @@ const Login = () => {
                 disabled={isLoading}
               />
             </div>
-            <div className="space-y-2">
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isLoading}
-              >
-                {isLoading ? "Signing in..." : "Sign in"}
-              </Button>
-              <p className="text-sm text-center text-gray-500 mt-4">
-                Default accounts:<br />
-                Admin: admin@example.com<br />
-                Employee: employee@example.com<br />
-                Password: password123
-              </p>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isLoading}
+            >
+              {isLoading ? "Signing in..." : "Sign in"}
+            </Button>
+            <div className="mt-4 text-sm text-center text-gray-500">
+              <p className="font-medium">Default accounts:</p>
+              <p>Admin: admin@example.com</p>
+              <p>Employee: employee@example.com</p>
+              <p>Password: password123</p>
             </div>
           </form>
         </CardContent>
