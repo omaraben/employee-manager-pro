@@ -14,7 +14,6 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
     try {
       await login(email, password);
       console.log("Login successful");
@@ -26,14 +25,19 @@ const Login = () => {
     }
   };
 
-  const handleDemoLogin = async () => {
+  const handleDefaultLogin = async (type: 'admin' | 'employee') => {
     setIsLoading(true);
+    const credentials = {
+      admin: { email: 'admin@example.com', password: 'password123' },
+      employee: { email: 'employee@example.com', password: 'password123' }
+    };
+    
     try {
-      await login("demo@example.com", "demo123");
-      console.log("Demo login successful");
+      await login(credentials[type].email, credentials[type].password);
+      console.log(`Default ${type} login successful`);
     } catch (error: any) {
-      console.error("Demo login error:", error);
-      toast.error("Failed to login with demo account. Please try again.");
+      console.error(`Default ${type} login error:`, error);
+      toast.error(`Failed to login with default ${type} account. Please try again.`);
     } finally {
       setIsLoading(false);
     }
@@ -80,15 +84,24 @@ const Login = () => {
               >
                 {isLoading ? "Signing in..." : "Sign in"}
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={handleDemoLogin}
-                disabled={isLoading}
-              >
-                Demo Login
-              </Button>
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleDefaultLogin('admin')}
+                  disabled={isLoading}
+                >
+                  Login as Admin
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleDefaultLogin('employee')}
+                  disabled={isLoading}
+                >
+                  Login as Employee
+                </Button>
+              </div>
             </div>
           </form>
         </CardContent>
