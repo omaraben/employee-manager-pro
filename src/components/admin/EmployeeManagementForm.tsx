@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Employee } from "@/types/types";
-import { db } from "@/lib/mysql";
+import { api } from "@/services/api";
 
 interface Props {
   onAddEmployee: (employee: Omit<Employee, "id">) => void;
@@ -27,20 +27,7 @@ const EmployeeManagementForm = ({ onAddEmployee, onDeleteEmployee, employees }: 
     setIsLoading(true);
     try {
       console.log("Creating new employee:", newEmployee);
-      
-      // Create user in MySQL database
-      const [result]: any = await db.execute(
-        'INSERT INTO users (email, password, name, role) VALUES (?, ?, ?, ?)',
-        [newEmployee.email, newEmployee.password, newEmployee.name, newEmployee.role]
-      );
-
-      const createdEmployee = {
-        id: result.insertId.toString(),
-        email: newEmployee.email,
-        name: newEmployee.name,
-        role: newEmployee.role
-      };
-
+      const createdEmployee = await api.createUser(newEmployee);
       console.log("Employee created:", createdEmployee);
       onAddEmployee(createdEmployee);
       setNewEmployee({ name: "", email: "", password: "", role: "employee" });

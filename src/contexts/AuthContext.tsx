@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { db } from "@/lib/mysql";
+import { api } from "@/services/api";
 
 interface User {
   id: string;
@@ -28,28 +28,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const login = async (email: string, password: string) => {
     try {
       console.log('Attempting login for email:', email);
+      const userData = await api.login(email, password);
       
-      const [rows]: any = await db.execute(
-        'SELECT * FROM users WHERE email = ? AND password = ?',
-        [email, password] // Note: In production, use proper password hashing
-      );
-
-      if (rows.length === 0) {
-        throw new Error('Invalid credentials');
-      }
-
-      const userRecord = rows[0];
-      const userWithProfile = {
-        id: userRecord.id,
-        email: userRecord.email,
-        name: userRecord.name,
-        role: userRecord.role
-      };
-
-      setUser(userWithProfile);
-      localStorage.setItem('user', JSON.stringify(userWithProfile));
+      setUser(userData);
+      localStorage.setItem('user', JSON.stringify(userData));
       
-      if (userWithProfile.role === 'admin') {
+      if (userData.role === 'admin') {
         navigate('/admin');
       } else {
         navigate('/employee');
