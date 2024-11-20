@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +10,6 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
-  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,8 +18,8 @@ const Login = () => {
     try {
       await login(email, password);
       // Login successful - navigation is handled in AuthContext
-      toast.success("Login successful!");
-    } catch (error) {
+      console.log("Login successful");
+    } catch (error: any) {
       console.error("Login error:", error);
       toast.error("Invalid email or password. Please try again.");
     } finally {
