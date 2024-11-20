@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Login from "./pages/Login";
 import AdminDashboard from "./pages/AdminDashboard";
 import EmployeeDashboard from "./pages/EmployeeDashboard";
+import Footer from "./components/Footer";
 import React from 'react';
 
 const queryClient = new QueryClient();
@@ -60,9 +61,12 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <AppRoutes />
+            <div className="min-h-screen flex flex-col">
+              <Toaster />
+              <Sonner />
+              <AppRoutes />
+              <Footer />
+            </div>
           </TooltipProvider>
         </AuthProvider>
       </QueryClientProvider>
