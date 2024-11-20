@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { api } from "@/services/api";
+import { loginUser } from "@/lib/api";
 
 interface User {
   id: string;
@@ -28,7 +28,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const login = async (email: string, password: string) => {
     try {
       console.log('Attempting login for email:', email);
-      const userData = await api.login(email, password);
+      const userData = await loginUser(email, password);
       
       setUser(userData);
       localStorage.setItem('user', JSON.stringify(userData));

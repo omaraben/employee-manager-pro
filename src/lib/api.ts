@@ -4,9 +4,10 @@ import { Employee, EntryData } from "@/types/types";
 // User Management
 export const createUser = async (userData: Omit<Employee, "id">) => {
   console.log('Creating user:', userData);
-  const { data, error } = await supabase
+  const { data: profile, error } = await supabase
     .from('profiles')
     .insert({
+      id: userData.id, // Make sure the ID is passed from auth
       name: userData.name,
       role: userData.role
     })
@@ -14,7 +15,7 @@ export const createUser = async (userData: Omit<Employee, "id">) => {
     .single();
     
   if (error) throw error;
-  return data;
+  return profile;
 };
 
 // Entry Management
@@ -81,5 +82,20 @@ export const loginUser = async (email: string, password: string) => {
   });
   
   if (error) throw error;
-  return data.user;
+  
+  // Fetch the user's profile after successful authentication
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', data.user.id)
+    .single();
+    
+  if (profileError) throw profileError;
+  
+  return {
+    id: data.user.id,
+    email: data.user.email,
+    name: profile.name,
+    role: profile.role
+  };
 };
