@@ -17,11 +17,23 @@ const Login = () => {
     
     try {
       await login(email, password);
-      // Login successful - navigation is handled in AuthContext
       console.log("Login successful");
     } catch (error: any) {
       console.error("Login error:", error);
       toast.error("Invalid email or password. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDemoLogin = async () => {
+    setIsLoading(true);
+    try {
+      await login("demo@example.com", "demo123");
+      console.log("Demo login successful");
+    } catch (error: any) {
+      console.error("Demo login error:", error);
+      toast.error("Failed to login with demo account. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -60,13 +72,24 @@ const Login = () => {
                 disabled={isLoading}
               />
             </div>
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isLoading}
-            >
-              {isLoading ? "Signing in..." : "Sign in"}
-            </Button>
+            <div className="space-y-2">
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoading}
+              >
+                {isLoading ? "Signing in..." : "Sign in"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={handleDemoLogin}
+                disabled={isLoading}
+              >
+                Demo Login
+              </Button>
+            </div>
           </form>
         </CardContent>
       </Card>
