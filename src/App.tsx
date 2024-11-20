@@ -26,9 +26,13 @@ const ProtectedRoute = ({ children, requiredRole }: { children: React.ReactNode;
 };
 
 const AppRoutes = () => {
+  const { user } = useAuth();
+
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
+      <Route path="/login" element={
+        !user ? <Login /> : <Navigate to={user.role === 'admin' ? '/admin' : '/employee'} replace />
+      } />
       <Route
         path="/admin/*"
         element={
@@ -51,17 +55,17 @@ const AppRoutes = () => {
 };
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <BrowserRouter>
+  <BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
         <AuthProvider>
           <Toaster />
           <Sonner />
           <AppRoutes />
         </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </BrowserRouter>
 );
 
 export default App;

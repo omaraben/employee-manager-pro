@@ -2,12 +2,12 @@ import { supabase } from "../integrations/supabase/client";
 import { Employee, EntryData } from "@/types/types";
 
 // User Management
-export const createUser = async (userData: Omit<Employee, "id">) => {
+export const createUser = async (userData: Employee) => {
   console.log('Creating user:', userData);
   const { data: profile, error } = await supabase
     .from('profiles')
     .insert({
-      id: userData.id, // Make sure the ID is passed from auth
+      id: userData.id,
       name: userData.name,
       role: userData.role
     })
