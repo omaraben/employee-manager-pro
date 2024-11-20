@@ -26,8 +26,11 @@ const EmployeeDashboard = () => {
     e.preventDefault();
     try {
       console.log("Submitting form data:", formData);
-      const newEntry = await createEntry(formData);
-      console.log("Entry created:", newEntry);
+      const result = await createEntry(formData);
+      const newEntry: EntryData = {
+        ...result,
+        created_at: new Date().toISOString()
+      };
       
       setEntries([newEntry, ...entries]);
       setFormData({

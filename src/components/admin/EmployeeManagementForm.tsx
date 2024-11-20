@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Employee } from "@/types/types";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/mysql";
 
 interface Props {
   onAddEmployee: (employee: Omit<Employee, "id">) => void;
@@ -28,29 +28,15 @@ const EmployeeManagementForm = ({ onAddEmployee, onDeleteEmployee, employees }: 
     try {
       console.log("Creating new employee:", newEmployee);
       
-      // Create the user in Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: newEmployee.email,
-        password: newEmployee.password,
-        email_confirm: true, // Auto-confirms the email
-        user_metadata: {
-          name: newEmployee.name,
-          role: newEmployee.role
-        }
-      });
-
-      if (authError) {
-        console.error("Auth error:", authError);
-        throw authError;
-      }
-
-      if (!authData.user) {
-        throw new Error("No user created");
-      }
+      // Create user in MySQL database
+      const [result]: any = await db.execute(
+        'INSERT INTO users (email, password, name, role) VALUES (?, ?, ?, ?)',
+        [newEmployee.email, newEmployee.password, newEmployee.name, newEmployee.role]
+      );
 
       const createdEmployee = {
-        id: authData.user.id,
-        email: authData.user.email!,
+        id: result.insertId.toString(),
+        email: newEmployee.email,
         name: newEmployee.name,
         role: newEmployee.role
       };
