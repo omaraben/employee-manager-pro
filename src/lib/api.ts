@@ -6,7 +6,10 @@ export const createUser = async (userData: Omit<Employee, "id">) => {
   console.log('Creating user:', userData);
   const { data, error } = await supabase
     .from('profiles')
-    .insert([userData])
+    .insert({
+      name: userData.name,
+      role: userData.role
+    })
     .select()
     .single();
     
