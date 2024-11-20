@@ -25,24 +25,6 @@ const Login = () => {
     }
   };
 
-  const handleDefaultLogin = async (type: 'admin' | 'employee') => {
-    setIsLoading(true);
-    const credentials = {
-      admin: { email: 'admin@example.com', password: 'password123' },
-      employee: { email: 'employee@example.com', password: 'password123' }
-    };
-    
-    try {
-      await login(credentials[type].email, credentials[type].password);
-      console.log(`Default ${type} login successful`);
-    } catch (error: any) {
-      console.error(`Default ${type} login error:`, error);
-      toast.error(`Failed to login with default ${type} account. Please try again.`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
@@ -84,24 +66,12 @@ const Login = () => {
               >
                 {isLoading ? "Signing in..." : "Sign in"}
               </Button>
-              <div className="grid grid-cols-2 gap-2 mt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => handleDefaultLogin('admin')}
-                  disabled={isLoading}
-                >
-                  Login as Admin
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => handleDefaultLogin('employee')}
-                  disabled={isLoading}
-                >
-                  Login as Employee
-                </Button>
-              </div>
+              <p className="text-sm text-center text-gray-500 mt-4">
+                Default accounts:<br />
+                Admin: admin@example.com<br />
+                Employee: employee@example.com<br />
+                Password: password123
+              </p>
             </div>
           </form>
         </CardContent>
