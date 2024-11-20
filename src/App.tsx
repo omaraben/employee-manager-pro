@@ -54,18 +54,20 @@ const AppRoutes = () => {
   );
 };
 
-const App = () => (
-  <BrowserRouter>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
+const App = () => {
+  return (
+    <BrowserRouter>
+      <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <Toaster />
-          <Sonner />
-          <AppRoutes />
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <AppRoutes />
+          </TooltipProvider>
         </AuthProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
-  </BrowserRouter>
-);
+      </QueryClientProvider>
+    </BrowserRouter>
+  );
+};
 
 export default App;
