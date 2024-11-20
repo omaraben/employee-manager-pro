@@ -1,138 +1,72 @@
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "./mysql";
 import { Employee, EntryData } from "@/types/types";
 
 // User Management
 export const createUser = async (email: string, password: string, name: string, role: string) => {
   console.log('Creating user:', { email, name, role });
-  const { data: authData, error: authError } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        name,
-        role
-      }
-    }
-  });
+  const [result]: any = await db.execute(
+    'INSERT INTO users (email, password, name, role) VALUES (?, ?, ?, ?)',
+    [email, password, name, role]
+  );
   
-  if (authError) {
-    console.error('Auth error:', authError);
-    throw authError;
-  }
-
-  console.log('Auth data:', authData);
-  return { id: authData.user?.id, email, name, role };
+  return { id: result.insertId, email, name, role };
 };
 
 // Entry Management
 export const createEntry = async (entry: Omit<EntryData, 'id' | 'created_at'>) => {
   console.log('Creating entry:', entry);
-  const { data, error } = await supabase
-    .from('entries')
-    .insert([{
-      user_id: entry.user_id,
-      name: entry.name,
-      serial_numbers: entry.serial_numbers,
-      id_number: entry.id_number,
-      phone_number: entry.phone_number,
-      van_shop: entry.van_shop,
-      allocation_date: entry.allocation_date,
-      location: entry.location
-    }])
-    .select()
-    .single();
-    
-  if (error) {
-    console.error('Entry creation error:', error);
-    throw error;
-  }
-  return data;
+  const [result]: any = await db.execute(
+    `INSERT INTO entries (user_id, name, serial_numbers, id_number, phone_number, 
+      van_shop, allocation_date, location) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [entry.user_id, entry.name, entry.serial_numbers, entry.id_number, 
+     entry.phone_number, entry.van_shop, entry.allocation_date, entry.location]
+  );
+  
+  return { id: result.insertId, ...entry };
 };
 
 export const getEntries = async () => {
   console.log('Fetching all entries');
-  const { data, error } = await supabase
-    .from('entries')
-    .select('*')
-    .order('created_at', { ascending: false });
-    
-  if (error) {
-    console.error('Get entries error:', error);
-    throw error;
-  }
-  return data;
+  const [rows] = await db.execute('SELECT * FROM entries ORDER BY created_at DESC');
+  return rows;
 };
 
 export const getUserEntries = async (userId: string) => {
   console.log('Fetching entries for user:', userId);
-  const { data, error } = await supabase
-    .from('entries')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
-    
-  if (error) {
-    console.error('Get user entries error:', error);
-    throw error;
-  }
-  return data;
+  const [rows] = await db.execute(
+    'SELECT * FROM entries WHERE user_id = ? ORDER BY created_at DESC',
+    [userId]
+  );
+  return rows;
 };
 
-// User Management
 export const getUsers = async () => {
   console.log('Fetching all users');
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('id, name, role');
-    
-  if (error) {
-    console.error('Get users error:', error);
-    throw error;
-  }
-  return data;
+  const [rows] = await db.execute('SELECT id, name, role FROM users');
+  return rows;
 };
 
 export const deleteUser = async (userId: string) => {
   console.log('Deleting user:', userId);
-  const { error } = await supabase.auth.admin.deleteUser(userId);
-  if (error) {
-    console.error('Delete user error:', error);
-    throw error;
-  }
+  await db.execute('DELETE FROM users WHERE id = ?', [userId]);
 };
 
 export const loginUser = async (email: string, password: string) => {
   console.log('Attempting login for:', email);
-  const { data: { user }, error } = await supabase.auth.signInWithPassword({
-    email,
-    password
-  });
+  const [rows]: any = await db.execute(
+    'SELECT * FROM users WHERE email = ? AND password = ?',
+    [email, password]
+  );
   
-  if (error) {
-    console.error('Login error:', error);
-    throw error;
-  }
-  
-  if (!user) {
-    console.error('No user returned after login');
+  if (rows.length === 0) {
     return null;
   }
   
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('name, role')
-    .eq('id', user.id)
-    .single();
-    
-  if (profileError) {
-    console.error('Profile fetch error:', profileError);
-    throw profileError;
-  }
-    
+  const user = rows[0];
   return {
     id: user.id,
     email: user.email,
-    name: profile?.name,
-    role: profile?.role
+    name: user.name,
+    role: user.role
   };
 };
