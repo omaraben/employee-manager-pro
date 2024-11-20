@@ -5,6 +5,7 @@ import EmployeeManagementForm from "@/components/admin/EmployeeManagementForm";
 import EmployeeEntriesTable from "@/components/admin/EmployeeEntriesTable";
 import { toast } from "@/components/ui/use-toast";
 import { Employee, EntryData } from "@/types/types";
+import { createUser } from "../lib/api";
 
 const AdminDashboard = () => {
   const { logout } = useAuth();
@@ -16,6 +17,7 @@ const AdminDashboard = () => {
       id: Date.now().toString(),
       ...newEmployeeData,
     };
+    createUser(employee);
     setEmployees([...employees, employee]);
     toast({
       title: "Success",
