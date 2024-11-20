@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "../integrations/supabase/client";
 import { Employee, EntryData } from "@/types/types";
 
 // User Management
