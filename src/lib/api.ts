@@ -1,21 +1,46 @@
-import { supabase } from "../integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { Employee, EntryData } from "@/types/types";
 
 // User Management
-export const createUser = async (userData: Employee) => {
+export const createUser = async (userData: Omit<Employee, "id">) => {
   console.log('Creating user:', userData);
-  const { data: profile, error } = await supabase
+  
+  // First create the auth user
+  const { data: authData, error: authError } = await supabase.auth.signUp({
+    email: userData.email,
+    password: userData.password!,
+    options: {
+      data: {
+        name: userData.name,
+        role: userData.role
+      }
+    }
+  });
+
+  if (authError) throw authError;
+  
+  return {
+    id: authData.user!.id,
+    email: userData.email,
+    name: userData.name,
+    role: userData.role
+  };
+};
+
+export const getUsers = async () => {
+  console.log('Fetching all users');
+  const { data, error } = await supabase
     .from('profiles')
-    .insert({
-      id: userData.id,
-      name: userData.name,
-      role: userData.role
-    })
-    .select()
-    .single();
+    .select('id, name, email, role');
     
   if (error) throw error;
-  return profile;
+  return data;
+};
+
+export const deleteUser = async (userId: string) => {
+  console.log('Deleting user:', userId);
+  const { error } = await supabase.auth.admin.deleteUser(userId);
+  if (error) throw error;
 };
 
 // Entry Management
@@ -54,26 +79,6 @@ export const getUserEntries = async (userId: string) => {
   return data;
 };
 
-export const getUsers = async () => {
-  console.log('Fetching all users');
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('id, name, role');
-    
-  if (error) throw error;
-  return data;
-};
-
-export const deleteUser = async (userId: string) => {
-  console.log('Deleting user:', userId);
-  const { error } = await supabase
-    .from('profiles')
-    .delete()
-    .eq('id', userId);
-    
-  if (error) throw error;
-};
-
 export const loginUser = async (email: string, password: string) => {
   console.log('Attempting login for:', email);
   const { data, error } = await supabase.auth.signInWithPassword({
@@ -94,7 +99,7 @@ export const loginUser = async (email: string, password: string) => {
   
   return {
     id: data.user.id,
-    email: data.user.email,
+    email: data.user.email!,
     name: profile.name,
     role: profile.role
   };

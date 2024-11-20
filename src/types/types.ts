@@ -3,6 +3,7 @@ export interface Employee {
   name: string;
   email: string;
   role: string;
+  password?: string;
 }
 
 export interface EntryData {
