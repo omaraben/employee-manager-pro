@@ -14,12 +14,14 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    
     try {
+      console.log("Attempting login with email:", email);
       await login(email, password);
       console.log("Login successful");
     } catch (error: any) {
-      console.error("Login error:", error);
-      toast.error("Invalid email or password. Please try again.");
+      console.error("Login failed:", error);
+      toast.error(error.message || "Failed to login. Please check your credentials.");
     } finally {
       setIsLoading(false);
     }
