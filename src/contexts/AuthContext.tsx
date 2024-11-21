@@ -44,37 +44,67 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const handleSession = async (session: Session) => {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', session.user.id)
-      .single();
+    try {
+      console.log("Handling session for user:", session.user.id);
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
 
-    if (profile) {
-      setUser({
-        id: session.user.id,
-        email: session.user.email!,
-        name: profile.name || '',
-        role: profile.role || 'employee'
-      });
+      if (profileError) {
+        console.error("Error fetching profile:", profileError);
+        throw profileError;
+      }
+
+      if (profile) {
+        const userData = {
+          id: session.user.id,
+          email: session.user.email!,
+          name: profile.name || '',
+          role: profile.role || 'employee'
+        };
+        console.log("Setting user data:", userData);
+        setUser(userData);
+      }
+    } catch (error) {
+      console.error("Session handling error:", error);
+      await logout();
     }
   };
 
   const login = async (email: string, password: string) => {
     try {
       console.log('Attempting login for email:', email);
+      
+      if (!email || !password) {
+        throw new Error("Email and password are required");
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase auth error:", error);
+        throw new Error(error.message);
+      }
 
-      const { data: profile } = await supabase
+      if (!data.user) {
+        throw new Error("No user data returned");
+      }
+
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', data.user.id)
         .single();
+
+      if (profileError) {
+        console.error("Profile fetch error:", profileError);
+        throw new Error("Error fetching user profile");
+      }
 
       if (profile) {
         const userData = {
@@ -85,6 +115,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         };
         setUser(userData);
 
+        console.log("Login successful, redirecting to:", profile.role === 'admin' ? '/admin' : '/employee');
         if (profile.role === 'admin') {
           navigate('/admin');
         } else {
