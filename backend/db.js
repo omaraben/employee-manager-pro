@@ -12,7 +12,7 @@ const pool = mysql.createPool({
 
 console.log('MySQL connection pool created');
 
-export const query = async (sql: string, params?: any[]) => {
+export const query = async (sql, params) => {
   try {
     console.log('Executing query:', sql);
     const [rows] = await pool.execute(sql, params);
