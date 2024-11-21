@@ -1,17 +1,26 @@
-import { createClient } from '@supabase/supabase-js';
-import type { Database } from '@/integrations/supabase/types';
+import mysql from 'mysql2/promise';
 
-const supabaseUrl = 'https://bbkbepnahvqeqqifbbxk.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJia2JlcG5haHZxZXFxaWZiYnhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDk4MjI0MDAsImV4cCI6MjAyNTM5ODQwMH0.O6Z2aXIPxvDzZAeeW3Yyv_3YUXgYLw_CiWYYqzIvRXE';
+const pool = mysql.createPool({
+  host: process.env.MYSQL_HOST || 'localhost',
+  user: process.env.MYSQL_USER || 'root',
+  password: process.env.MYSQL_PASSWORD || '',
+  database: process.env.MYSQL_DATABASE || 'employee_management',
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+});
 
-export const supabase = createClient<Database>(
-  supabaseUrl,
-  supabaseAnonKey,
-  {
-    auth: {
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: true
-    }
+console.log('MySQL connection pool created');
+
+export const query = async (sql: string, params?: any[]) => {
+  try {
+    console.log('Executing query:', sql);
+    const [rows] = await pool.execute(sql, params);
+    return rows;
+  } catch (error) {
+    console.error('Database error:', error);
+    throw error;
   }
-);
+};
+
+export default pool;

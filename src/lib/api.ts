@@ -1,26 +1,17 @@
-import { supabase } from "@/integrations/supabase/client";
 import { Employee, EntryData } from "@/types/types";
+import { query } from "./db";
 
 // User Management
 export const createUser = async (userData: Omit<Employee, "id">) => {
   console.log('Creating user:', userData);
   
-  // First create the auth user
-  const { data: authData, error: authError } = await supabase.auth.signUp({
-    email: userData.email,
-    password: userData.password!,
-    options: {
-      data: {
-        name: userData.name,
-        role: userData.role
-      }
-    }
-  });
-
-  if (authError) throw authError;
+  const result: any = await query(
+    'INSERT INTO users (email, password, name, role) VALUES (?, ?, ?, ?)',
+    [userData.email, userData.password, userData.name, userData.role]
+  );
   
   return {
-    id: authData.user!.id,
+    id: result.insertId.toString(),
     email: userData.email,
     name: userData.name,
     role: userData.role
@@ -29,78 +20,64 @@ export const createUser = async (userData: Omit<Employee, "id">) => {
 
 export const getUsers = async () => {
   console.log('Fetching all users');
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('id, name, email, role');
-    
-  if (error) throw error;
-  return data;
+  return await query('SELECT id, name, email, role FROM users');
 };
 
 export const deleteUser = async (userId: string) => {
   console.log('Deleting user:', userId);
-  const { error } = await supabase.auth.admin.deleteUser(userId);
-  if (error) throw error;
+  await query('DELETE FROM users WHERE id = ?', [userId]);
+};
+
+export const loginUser = async (email: string, password: string) => {
+  console.log('Attempting login for:', email);
+  const users: any[] = await query(
+    'SELECT * FROM users WHERE email = ? AND password = ?',
+    [email, password]
+  );
+  
+  if (users.length === 0) {
+    throw new Error('Invalid credentials');
+  }
+  
+  const user = users[0];
+  return {
+    id: user.id.toString(),
+    email: user.email,
+    name: user.name,
+    role: user.role
+  };
 };
 
 // Entry Management
 export const createEntry = async (entry: Omit<EntryData, "id" | "created_at">) => {
   console.log('Creating entry:', entry);
-  const { data, error } = await supabase
-    .from('entries')
-    .insert([entry])
-    .select()
-    .single();
-    
-  if (error) throw error;
-  return data;
+  const result: any = await query(
+    `INSERT INTO entries (
+      user_id, name, serial_numbers, id_number, 
+      phone_number, van_shop, allocation_date, location
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      entry.user_id, entry.name, entry.serial_numbers, entry.id_number,
+      entry.phone_number, entry.van_shop, entry.allocation_date, entry.location
+    ]
+  );
+  
+  return {
+    id: result.insertId.toString(),
+    ...entry,
+    created_at: new Date().toISOString()
+  };
 };
 
 export const getEntries = async () => {
   console.log('Fetching all entries');
-  const { data, error } = await supabase
-    .from('entries')
-    .select('*')
-    .order('created_at', { ascending: false });
-    
-  if (error) throw error;
-  return data;
+  return await query('SELECT * FROM entries ORDER BY created_at DESC');
 };
 
 export const getUserEntries = async (userId: string) => {
   console.log('Fetching entries for user:', userId);
-  const { data, error } = await supabase
-    .from('entries')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
-    
-  if (error) throw error;
-  return data;
-};
-
-export const loginUser = async (email: string, password: string) => {
-  console.log('Attempting login for:', email);
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password
-  });
-  
-  if (error) throw error;
-  
-  // Fetch the user's profile after successful authentication
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', data.user.id)
-    .single();
-    
-  if (profileError) throw profileError;
-  
-  return {
-    id: data.user.id,
-    email: data.user.email!,
-    name: profile.name,
-    role: profile.role
-  };
+  return await query(
+    'SELECT * FROM entries WHERE user_id = ? ORDER BY created_at DESC',
+    [userId]
+  );
 };
