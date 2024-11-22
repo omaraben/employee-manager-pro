@@ -43,7 +43,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       toast.success("Logged in successfully");
     } catch (error: any) {
       console.error("Login error:", error);
-      toast.error(error.message || "Invalid email or password");
+      // Toast is now handled by the API interceptor
       throw error;
     }
   };
