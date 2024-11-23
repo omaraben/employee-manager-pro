@@ -1,9 +1,10 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { Session, User } from "@supabase/supabase-js";
 
-interface User {
+interface AuthUser {
   id: string;
   email: string;
   name: string;
@@ -11,7 +12,7 @@ interface User {
 }
 
 interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -19,21 +20,38 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const navigate = useNavigate();
 
-  const login = async (email: string, password: string) => {
+  useEffect(() => {
+    // Check active session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("Initial session check:", session);
+      if (session) {
+        handleSession(session);
+      }
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log("Auth state changed:", _event, session);
+      if (session) {
+        handleSession(session);
+      } else {
+        setUser(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleSession = async (session: Session) => {
+    const authUser = session.user;
+    console.log("Handling session for user:", authUser);
+
     try {
-      console.log('Attempting login with Supabase for email:', email);
-      
-      const { data: { user: authUser }, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (error) throw error;
-      if (!authUser) throw new Error("No user returned from Supabase");
-
       // Get the user's profile data
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
@@ -41,9 +59,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .eq('id', authUser.id)
         .single();
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error("Error fetching profile:", profileError);
+        throw profileError;
+      }
 
-      const userData: User = {
+      console.log("Retrieved profile:", profile);
+
+      const userData: AuthUser = {
         id: authUser.id,
         email: authUser.email!,
         name: profile.name || authUser.email!,
@@ -51,9 +74,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       };
 
       setUser(userData);
-      console.log("Login successful, redirecting to:", userData.role === 'admin' ? '/admin' : '/employee');
+    } catch (error) {
+      console.error("Error handling session:", error);
+      await supabase.auth.signOut();
+      setUser(null);
+    }
+  };
+
+  const login = async (email: string, password: string) => {
+    try {
+      console.log('Attempting login with email:', email);
       
-      if (userData.role === 'admin') {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        console.error("Login error:", error);
+        throw error;
+      }
+
+      if (!data.user || !data.session) {
+        throw new Error("No user data returned from Supabase");
+      }
+
+      console.log("Login successful, session:", data.session);
+      await handleSession(data.session);
+
+      // Navigate based on user role
+      if (user?.role === 'admin') {
         navigate('/admin');
       } else {
         navigate('/employee');
