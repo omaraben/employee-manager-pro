@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = 'https://bbkbepnahvqeqqifbbxk.supabase.co';
-const supabaseAnonKey = 'YOUR_ANON_KEY'; // You'll need to provide this
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJia2JlcG5haHZxZXFxaWZiYnhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDk4MjI0MTcsImV4cCI6MjAyNTM5ODQxN30.RqOyoVTqPFZAR0GzQqS40tVZFUGEZZGfvgDVZFPBVXg';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
