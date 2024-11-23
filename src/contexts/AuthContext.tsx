@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { loginUser } from "@/lib/api";
+import { supabase } from "@/integrations/supabase/client";
 
 interface User {
   id: string;
@@ -24,16 +24,35 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const login = async (email: string, password: string) => {
     try {
-      console.log('Attempting login for email:', email);
+      console.log('Attempting login with Supabase for email:', email);
       
-      if (!email || !password) {
-        throw new Error("Email and password are required");
-      }
+      const { data: { user: authUser }, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
 
-      const userData = await loginUser(email, password);
+      if (error) throw error;
+      if (!authUser) throw new Error("No user returned from Supabase");
+
+      // Get the user's profile data
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', authUser.id)
+        .single();
+
+      if (profileError) throw profileError;
+
+      const userData: User = {
+        id: authUser.id,
+        email: authUser.email!,
+        name: profile.name || authUser.email!,
+        role: profile.role || 'employee'
+      };
+
       setUser(userData);
-
       console.log("Login successful, redirecting to:", userData.role === 'admin' ? '/admin' : '/employee');
+      
       if (userData.role === 'admin') {
         navigate('/admin');
       } else {
@@ -43,13 +62,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       toast.success("Logged in successfully");
     } catch (error: any) {
       console.error("Login error:", error);
-      // Toast is now handled by the API interceptor
+      toast.error(error.message || "Failed to login");
       throw error;
     }
   };
 
   const logout = async () => {
     try {
+      await supabase.auth.signOut();
       setUser(null);
       navigate('/login');
       toast.success("Logged out successfully");
