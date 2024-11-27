@@ -28,6 +28,7 @@ const ProtectedRoute = ({ children, requiredRole }: { children: React.ReactNode;
 
 const AppRoutes = () => {
   const { user } = useAuth();
+  console.log("Current user in AppRoutes:", user); // Added for debugging
 
   return (
     <Routes>
@@ -57,8 +58,8 @@ const AppRoutes = () => {
 
 const App = () => {
   return (
-    <BrowserRouter>
-      <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
         <AuthProvider>
           <TooltipProvider>
             <div className="min-h-screen flex flex-col">
@@ -69,8 +70,8 @@ const App = () => {
             </div>
           </TooltipProvider>
         </AuthProvider>
-      </QueryClientProvider>
-    </BrowserRouter>
+      </BrowserRouter>
+    </QueryClientProvider>
   );
 };
 
