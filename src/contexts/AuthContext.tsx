@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Session, User } from "@supabase/supabase-js";
+import { Session } from "@supabase/supabase-js";
 
 interface AuthUser {
   id: string;
@@ -24,7 +24,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check active session
+    console.log("Setting up auth state listener");
+    
+    // Check active sessions
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log("Initial session check:", session);
       if (session) {
@@ -35,10 +37,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       console.log("Auth state changed:", _event, session);
       if (session) {
-        handleSession(session);
+        await handleSession(session);
       } else {
         setUser(null);
       }
@@ -74,10 +76,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       };
 
       setUser(userData);
+      
+      // Navigate based on role
+      if (userData.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/employee');
+      }
     } catch (error) {
       console.error("Error handling session:", error);
       await supabase.auth.signOut();
       setUser(null);
+      toast.error("Error setting up user session");
     }
   };
 
@@ -90,25 +100,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         password
       });
 
-      if (error) {
-        console.error("Login error:", error);
-        throw error;
-      }
+      if (error) throw error;
 
-      if (!data.user || !data.session) {
-        throw new Error("No user data returned from Supabase");
-      }
-
-      console.log("Login successful, session:", data.session);
-      await handleSession(data.session);
-
-      // Navigate based on user role
-      if (user?.role === 'admin') {
-        navigate('/admin');
-      } else {
-        navigate('/employee');
-      }
-      
+      console.log("Login successful:", data);
       toast.success("Logged in successfully");
     } catch (error: any) {
       console.error("Login error:", error);
